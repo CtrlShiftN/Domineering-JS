@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            href="assets/vendor/bootstrap/bootstrap-5.2.3-dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <script src="assets/vendor/bootstrap/bootstrap-5.2.3-dist/js/bootstrap.min.js"></script>
+        <title>Domineering</title>
+    </head>
+    <body>
+        <header></header>
+        <main>
+            <div class="container">
+                <canvas id="game-panel"></canvas>
+            </div>
+        </main>
+        <footer></footer>
+        <script>
+            // Declare variables
+            const cellSize = 50;
+            let gameBoardSize = 6;
+            let gamePanel = document.getElementById("game-panel");
+            gamePanel.width = cellSize * gameBoardSize + 1;
+            gamePanel.height = cellSize * gameBoardSize + 1;
+            let vertical = true;
+            // Gen a game board matrix to store the moves
+            let gameBoard = genMatrix(gameBoardSize);
+            // calculate panel width and height
+            let panelWidth = cellSize * gameBoardSize + 1;
+            let panelHeight = cellSize * gameBoardSize + 1;
+            let ctx = gamePanel.getContext("2d");
+            // Function to generate a matrix as initial matrix of the game
+            function genMatrix(size, defaultValue = 0) {
+                var arr = [];
+                // Gen rows
+                for (let i = 0; i < size; i++) {
+                    arr[i] = [];
+                    // Gen cells in each row, which make it becomes cols
+                    for (let j = 0; j < size; j++) {
+                        // Assign default value to matrix cell
+                        arr[i].push(defaultValue);
+                    }
+                }
+                return arr;
+            }
+
+            function initGame() {
+                // draw the board
+                for (let i = 0; i <= gameBoardSize; i++) {
+                    ctx.moveTo(i * cellSize + 0.5, 0.5);
+                    ctx.lineTo(
+                        i * cellSize + 0.5,
+                        cellSize * gameBoardSize + 0.5
+                    );
+                }
+                for (let i = 0; i <= gameBoardSize; i++) {
+                    ctx.moveTo(0.5, i * cellSize + 0.5);
+                    ctx.lineTo(
+                        cellSize * gameBoardSize + 0.5,
+                        i * cellSize + 0.5
+                    );
+                }
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+                // add event listener to update the game
+                gamePanel.addEventListener(
+                    "click",
+                    (e) => {
+                        // update the game board if there is a click event
+                        updateGame(e);
+                    },
+                    false
+                );
+            }
+
+            // a move on the board and store it into the game board matrix
+            function nextMove(col, row) {
+                // if vertial then color = red, otherwise, blue
+                ctx.fillStyle = vertical ? "#ff0000" : "#0000ff";
+                ctx.fillRect(
+                    cellSize * col + 0.5,
+                    cellSize * row + 0.5,
+                    (vertical ? cellSize : cellSize * 2) - 0.5,
+                    (vertical ? cellSize * 2 : cellSize) - 0.5
+                );
+                // update to the game board matrix
+                gameBoard[row][col] = 1;
+                gameBoard[vertical ? row + 1 : row][
+                    vertical ? col : col + 1
+                ] = 1;
+                // Log every moves
+                console.log("x = " + col + "\ny = " + row);
+                txt = "";
+                for (i = 0; i < gameBoardSize; i++) {
+                    for (j = 0; j < gameBoardSize; j++) {
+                        txt += " " + gameBoard[i][j] + " ,";
+                    }
+                    txt += "\n";
+                }
+                console.log(txt);
+            }
+
+            // Update the game after every click events
+            function updateGame(event) {
+                // Locate the position to update
+                let col = Math.floor(event.pageX / cellSize)-2;
+                let row = Math.floor(event.pageY / cellSize);
+                // Log location
+                console.log(
+                    "You clicked : { " +
+                        row +
+                        " , " +
+                        col +
+                        " }\nisAvailable = " +
+                        isAvailable(row, col)
+                );
+                // If position is available to move, then move
+                if (isAvailable(row, col)) {
+                    nextMove(col, row);
+                    // if this move makes the game over, then end the game
+                    if (isGameOver()) {
+                        endGame();
+                    }
+                    // after each move, change direction for the opponent
+                    vertical = !vertical;
+                }
+            }
+
+            // Check if available to move
+            function isAvailable(row, col) {
+                // This position already had a move
+                if (gameBoard[row][col] == 1) {
+                    return false;
+                }
+
+                // Outside of the box or not enough space
+                if (vertical && row + 1 > gameBoardSize - 1) {
+                    return false;
+                }
+                if (!vertical && col + 1 > gameBoardSize - 1) {
+                    return false;
+                }
+                if (vertical && gameBoard[row + 1][col] == 1) {
+                    return false;
+                }
+                if (!vertical && gameBoard[row][col + 1] == 1) {
+                    return false;
+                }
+
+                // default is available
+                return true;
+            }
+
+            // Check if game over
+            function isGameOver() {
+                // Loop through the board
+                for (i = 0; i < gameBoardSize; i++) {
+                    for (j = 0; j < gameBoardSize; j++) {
+                        // If there is still a space to move
+                        if (gameBoard[i][j] == 0) {
+                            if (
+                                (i < gameBoardSize - 1 &&
+                                    gameBoard[i + 1][j] == 0) ||
+                                (i > 0 && gameBoard[i - 1][j] == 0) ||
+                                (j < gameBoardSize - 1 &&
+                                    gameBoard[i][j + 1] == 0) ||
+                                (j > 0 && gameBoard[i][j - 1] == 0)
+                            ) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            // End the game, inform the winner
+            function endGame() {
+                alert(vertical ? "Blue is a winner ." : "Red is a winner .");
+            }
+
+            // Initialize the game
+            initGame();
+        </script>
+    </body>
+</html>
